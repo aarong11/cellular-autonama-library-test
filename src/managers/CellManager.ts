@@ -49,18 +49,22 @@ class CellManager {
     this.cells = this.cells.filter(c => c !== cell);
   }
 
+  public clearCells(): void {
+    this.cells = [];
+  }
+
   /**
    * Creates and partitions Cells from an image using the provided adapter and cell dimensions.
    * @param imageAdapter - The image adapter to use for retrieving image data.
    * @param cellWidth - The width of each Cell.
    * @param cellHeight - The height of each Cell.
    */
-  public async partitionCellsFromImage(imageAdapter: BaseImageAdapter, cellWidth: number, cellHeight: number): Promise<void> {
+  public async partitionCellsFromImage(imageAdapter: BaseImageAdapter, cellWidth: number, cellHeight: number): Promise<Cell[]> {
     const metadata = await imageAdapter.getMetadata();
     const width = (await imageAdapter.getImageData()).width;
     const height = (await imageAdapter.getImageData()).height;
 
-    if (!width || !height) return; // Guard for empty metadata
+    if (!width || !height) return []; // Guard for empty metadata
 
     // Loop through the image and create cells
     for (let y = 0; y < height; y += cellHeight) {
@@ -77,8 +81,9 @@ class CellManager {
         }
       }
     }
-  }
 
+    return this.cells;
+  }
   // Additional methods for managing cells
 }
 

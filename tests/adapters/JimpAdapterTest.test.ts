@@ -7,6 +7,7 @@ import Jimp from 'jimp'; // Added import
 const fixturesPath = path.join(__dirname, '../fixtures');
 const testImagePath = path.join(fixturesPath, 'test_image.png');
 const testOutputPath = path.join(fixturesPath, 'test_output.png');
+const badImageFile = path.join(fixturesPath, 'bad_image.png');
 
 // Add setup to create empty images if they don't exist
 beforeAll(async () => {

@@ -40,7 +40,11 @@ export class NodeCanvasAdapter extends BaseImageAdapter {
    * @returns A promise that resolves to a Buffer.
    */
   async toBuffer(): Promise<Buffer> {
-    return this.canvas.toBuffer('image/png');
+    try {
+      return this.canvas.toBuffer('image/png');
+    } catch (error) {
+      throw new Error('Error converting canvas to buffer');
+    }
   }
 
   /**
@@ -67,32 +71,36 @@ export class NodeCanvasAdapter extends BaseImageAdapter {
    * @returns A promise that resolves to a new NodeCanvasAdapter instance.
    */
   async fromFile(filePath: string): Promise<BaseImageAdapter> {
-    const canvasImage: CanvasImage = await loadImage(filePath);
-    const tempCanvas = createCanvas(canvasImage.width, canvasImage.height);
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.drawImage(canvasImage, 0, 0);
-    const imageData = tempCtx.getImageData(0, 0, canvasImage.width, canvasImage.height);
-    const channels = ['r', 'g', 'b', 'a'];
-    const pixelData: PixelValue[] = [];
-    for (let i = 0; i < imageData.data.length; i += channels.length) {
-      const pixel: PixelValue = {};
-      channels.forEach((channel, index) => {
-        pixel[channel] = imageData.data[i + index];
-      });
-      pixelData.push(pixel);
+    try {
+      const canvasImage: CanvasImage = await loadImage(filePath);
+      const tempCanvas = createCanvas(canvasImage.width, canvasImage.height);
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(canvasImage, 0, 0);
+      const imageData = tempCtx.getImageData(0, 0, canvasImage.width, canvasImage.height);
+      const channels = ['r', 'g', 'b', 'a'];
+      const pixelData: PixelValue[] = [];
+      for (let i = 0; i < imageData.data.length; i += channels.length) {
+        const pixel: PixelValue = {};
+        channels.forEach((channel, index) => {
+          pixel[channel] = imageData.data[i + index];
+        });
+        pixelData.push(pixel);
+      }
+      const metadata: ImageMetadata = {
+        format: 'png',
+        size: imageData.data.length,
+        channels,
+      };
+      const newImageData: ImageData = {
+        imageMetadata: metadata,
+        width: imageData.width,
+        height: imageData.height,
+        pixelData,
+      };
+      return new NodeCanvasAdapter(newImageData);
+    } catch(ex) {
+      throw new Error('Error loading image from file');
     }
-    const metadata: ImageMetadata = {
-      format: 'png',
-      size: imageData.data.length,
-      channels,
-    };
-    const newImageData: ImageData = {
-      imageMetadata: metadata,
-      width: imageData.width,
-      height: imageData.height,
-      pixelData,
-    };
-    return new NodeCanvasAdapter(newImageData);
   }
 
   /**

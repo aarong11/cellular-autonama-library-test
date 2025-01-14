@@ -103,9 +103,6 @@ export abstract class BaseImageAdapter implements IImageAdapter {
         pixelValue[channel] = 255;
       }
     });
-
-    console.log(pixelValue);
-
     return pixelValue;
   }
 

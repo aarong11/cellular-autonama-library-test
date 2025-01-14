@@ -29,7 +29,11 @@ export class JimpAdapter extends BaseImageAdapter {
    * @returns A promise that resolves to a Buffer.
    */
   async toBuffer(): Promise<Buffer> {
-    return await this.image.getBufferAsync(Jimp.MIME_PNG);
+    try {
+      return await this.image.getBufferAsync(Jimp.MIME_PNG);
+    } catch (error) {
+      throw new Error('Error converting canvas to buffer');
+    }
   }
 
   /**
@@ -55,27 +59,31 @@ export class JimpAdapter extends BaseImageAdapter {
    * @returns A promise that resolves to a new JimpAdapter instance.
    */
   async fromFile(filePath: string): Promise<BaseImageAdapter> {
-    const image = await Jimp.read(filePath);
-    const channels = ['r', 'g', 'b', 'a'];
-    const pixelData: PixelValue[] = Array.from({ length: image.bitmap.width * image.bitmap.height }, (_, i) => {
-      const idx = i * channels.length;
-      const pixel: PixelValue = {};
-      channels.forEach((channel, index) => {
-        pixel[channel] = image.bitmap.data[idx + index];
+    try {
+      const image = await Jimp.read(filePath);
+      const channels = ['r', 'g', 'b', 'a'];
+      const pixelData: PixelValue[] = Array.from({ length: image.bitmap.width * image.bitmap.height }, (_, i) => {
+        const idx = i * channels.length;
+        const pixel: PixelValue = {};
+        channels.forEach((channel, index) => {
+          pixel[channel] = image.bitmap.data[idx + index];
+        });
+        return pixel;
       });
-      return pixel;
-    });
-    const imageData: ImageData = {
-      imageMetadata: {
-        format: image.getMIME(),
-        size: image.bitmap.data.length,
-        channels,
-      },
-      width: image.bitmap.width,
-      height: image.bitmap.height,
-      pixelData,
-    };
-    return new JimpAdapter(imageData);
+      const imageData: ImageData = {
+        imageMetadata: {
+          format: image.getMIME(),
+          size: image.bitmap.data.length,
+          channels,
+        },
+        width: image.bitmap.width,
+        height: image.bitmap.height,
+        pixelData,
+      };
+      return new JimpAdapter(imageData);
+    } catch(ex) {
+      throw new Error('Error loading image from file');
+    }
   }
 
   /**

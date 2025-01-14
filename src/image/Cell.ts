@@ -61,26 +61,34 @@ export class Cell {
   /**
    * Calculates the entropy of the colors within the cell.
    * Entropy is a measure of randomness or diversity of colors.
+   * @param colorSensitivity - The sensitivity for color quantization.
    * @returns The entropy value.
    */
-  async getEntropy(): Promise<number> {
-    const colorCounts: Record<string, number> = {};
-    let totalPixels = 0;
-
-    for (let y = this.y; y < this.y + this.height; y++) {
-      for (let x = this.x; x < this.x + this.width; x++) {
-        const { r, g, b } = await this.adapter.getChannelValues(x, y);
-        const key = `${r},${g},${b}`;
-        colorCounts[key] = (colorCounts[key] || 0) + 1;
-        totalPixels++;
-      }
-    }
+  async getEntropy(colorSensitivity: number = 1): Promise<number> {
+    const pixels = await this.adapter.getChannelValuesForRegion(
+      this.x, 
+      this.x + this.width,
+      this.y, 
+      this.y + this.height
+    );
+    
+    const colorCounts = new Map<string, number>();
+    const totalPixels = pixels.length;
 
     if (totalPixels === 0) return 0;
 
-    return Object.values(colorCounts).reduce((sum, count) => {
+    // Quantize colors based on sensitivity
+    for (const pixel of pixels) {
+      const quantizedR = Math.round(pixel.r / colorSensitivity) * colorSensitivity;
+      const quantizedG = Math.round(pixel.g / colorSensitivity) * colorSensitivity;
+      const quantizedB = Math.round(pixel.b / colorSensitivity) * colorSensitivity;
+      const key = `${quantizedR},${quantizedG},${quantizedB}`;
+      colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+    }
+
+    return Array.from(colorCounts.values()).reduce((entropy, count) => {
       const p = count / totalPixels;
-      return sum - p * Math.log2(p);
+      return entropy - p * Math.log2(p);
     }, 0);
   }
 
