@@ -1,68 +1,136 @@
-export abstract class BaseImageAdapter {
-  protected imageData: { width: number; height: number; data: Uint8Array };
+export type ImageMetadata = {
+  format: string;
+  size: number;
+  channels: number; // Number of channels (e.g., 3 for RGB, 4 for RGBA)
+};
 
-  constructor() {
-    this.imageData = { width: 0, height: 0, data: new Uint8Array() };
+export type ImageData = {
+  imageMetadata: ImageMetadata;
+  width: number;
+  height: number;
+  pixelData: PixelValue[];
+};
+
+export type PixelValue = {
+  r: number;
+  g: number;
+  b: number;
+  a?: number; // Optional alpha channel
+};
+
+export interface IImageAdapter {
+  getImageData(): Promise<ImageData>;
+  setImageData(imageData: ImageData): Promise<void>;
+  toBuffer(): Promise<Buffer>;
+  getMetadata(): Promise<ImageMetadata>;
+  toFile(outputPath: string): Promise<void>;
+  fromFile(filePath: string): Promise<IImageAdapter>;
+
+  // Sets the RGBA values for a pixel at the given coordinates (x, y, pixelValue) and returns the updated image adapter
+  setChannelValuesForPixel(x: number, y: number, pixelValue: PixelValue): Promise<BaseImageAdapter>;
+
+  // Returns the RGBA values for a pixel at the given coordinates (x, y)
+  getChannelValues(x: number, y: number): Promise<PixelValue>;
+
+  // Returns ImageData for a specific region defined by the given coordinates (xStart, xEnd, yStart, yEnd)
+  getChannelValuesForRegion(
+      xStart: number,
+      xEnd: number,
+      yStart: number,
+      yEnd: number
+  ): Promise<PixelValue[]>;
+
+  createPixelValueArray(width: number, height: number): PixelValue[];
+}
+
+export abstract class BaseImageAdapter implements IImageAdapter {
+  protected imageData: Readonly<ImageData>;
+
+  constructor(imageData: ImageData) {
+    this.imageData = Object.freeze(imageData);
   }
 
   abstract toBuffer(): Promise<Buffer>;
-  abstract getMetadata(): Promise<{ width: number; height: number }>;
+  abstract getMetadata(): Promise<ImageMetadata>;
   abstract toFile(outputPath: string): Promise<void>;
-  abstract fromFile(filePath: string): Promise<BaseImageAdapter>;
+  abstract fromFile(filePath: string): Promise<IImageAdapter>;
 
-  async getChannelValue(x: number, y: number, channel: 'r' | 'g' | 'b'): Promise<number> {
-    const index = (y * this.imageData.width + x) * 4;
-    switch (channel) {
-      case 'r':
-        return this.imageData.data[index];
-      case 'g':
-        return this.imageData.data[index + 1];
-      case 'b':
-        return this.imageData.data[index + 2];
-      default:
-        throw new Error('Invalid channel');
+  createPixelValueArray(width: number, height: number): PixelValue[] {
+      return new Array<PixelValue>(width * height);
+  }
+
+  async getImageData(): Promise<ImageData> {
+      return this.imageData;
+  }
+
+  async setImageData(imageData: ImageData): Promise<void> {
+      this.imageData = Object.freeze(imageData);
+  }
+
+  /**
+   * Sets the RGBA values for a pixel at the given coordinates (x, y, pixelValue) and returns the updated image adapter
+   * @param x - The x-coordinate of the pixel.
+   * @param y - The y-coordinate of the pixel.
+   * @param pixelValue - The PixelValue object containing RGBA values.
+   * @returns The updated image adapter.
+   */
+  async setChannelValuesForPixel(x: number, y: number, pixelValue: PixelValue): Promise<BaseImageAdapter> {
+      const channels = this.imageData.imageMetadata.channels;
+      const index = (y * this.imageData.width + x) * channels;
+      this.imageData.pixelData[index] = pixelValue;
+      return this;
+  }
+
+  /**
+   * Retrieves the pixel value at the specified (x, y) coordinates.
+   * @param x - The x-coordinate of the pixel.
+   * @param y - The y-coordinate of the pixel.
+   * @returns The PixelValue object containing RGBA values.
+   * @throws Error if coordinates are out of bounds.
+   */
+  async getChannelValues(x: number, y: number): Promise<PixelValue> {
+    if (
+      x < 0 || x >= this.imageData.width ||
+      y < 0 || y >= this.imageData.height
+    ) {
+      throw new Error('Pixel coordinates out of bounds');
     }
+    const channels = this.imageData.imageMetadata.channels;
+    const index = (y * this.imageData.width + x) * channels;
+
+    const pixelValue: PixelValue = {
+        r: this.imageData.pixelData[index].r,
+        g: this.imageData.pixelData[index].g,
+        b: this.imageData.pixelData[index].b,
+        a: this.imageData.pixelData[index].a ? this.imageData.pixelData[index].a : 255
+    }
+
+    console.log(pixelValue);
+
+    return pixelValue;
   }
 
-  async getChannelValues(x: number, y: number): Promise<{ r: number; g: number; b: number }> {
-    const index = (y * this.imageData.width + x) * 4;
-    return {
-      r: this.imageData.data[index],
-      g: this.imageData.data[index + 1],
-      b: this.imageData.data[index + 2],
-    };
-  }
-
-  // Rerurns a collection of channel values for a defined region of the image
+  /**
+   * Retrieves the pixel values for a specified region.
+   * @param xStart - The starting x-coordinate of the region.
+   * @param xEnd - The ending x-coordinate of the region.
+   * @param yStart - The starting y-coordinate of the region.
+   * @param yEnd - The ending y-coordinate of the region.
+   * @returns A promise that resolves to an array of PixelValue objects.
+   */
   async getChannelValuesForRegion(
-    xStart: number,
-    xEnd: number,
-    yStart: number,
-    yEnd: number
-  ): Promise<{ r: Uint8Array; g: Uint8Array; b: Uint8Array }> {
-    const r = new Uint8Array((xEnd - xStart) * (yEnd - yStart));
-    const g = new Uint8Array((xEnd - xStart) * (yEnd - yStart));
-    const b = new Uint8Array((xEnd - xStart) * (yEnd - yStart));
-
-    let index = 0;
+      xStart: number,
+      xEnd: number,
+      yStart: number,
+      yEnd: number
+  ): Promise<PixelValue[]> {
+    const pixelValues: PixelValue[] = [];
     for (let y = yStart; y < yEnd; y++) {
       for (let x = xStart; x < xEnd; x++) {
-        const { r: red, g: green, b: blue } = await this.getChannelValues(x, y);
-        r[index] = red;
-        g[index] = green;
-        b[index] = blue;
-        index++;
+        const value = await this.getChannelValues(x, y);
+        pixelValues.push(value);
       }
     }
-
-    return { r, g, b };
-  }
-
-  setImageData(width: number, height: number, data: Uint8Array): void {
-    this.imageData = { width, height, data };
-  }
-
-  getImageData(): { width: number; height: number; data: Uint8Array } {
-    return this.imageData;
+    return pixelValues;
   }
 }
