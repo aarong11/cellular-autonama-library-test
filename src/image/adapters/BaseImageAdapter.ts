@@ -1,7 +1,7 @@
 export type ImageMetadata = {
   format: string;
   size: number;
-  channels: number; // Number of channels (e.g., 3 for RGB, 4 for RGBA)
+  channels: string[]; // Array of channel names (e.g., ['r', 'g', 'b'], ['grayscale'])
 };
 
 export type ImageData = {
@@ -12,10 +12,7 @@ export type ImageData = {
 };
 
 export type PixelValue = {
-  r: number;
-  g: number;
-  b: number;
-  a?: number; // Optional alpha channel
+  [key: string]: number; // Dynamic channel values
 };
 
 export interface IImageAdapter {
@@ -56,7 +53,9 @@ export abstract class BaseImageAdapter implements IImageAdapter {
   abstract fromFile(filePath: string): Promise<IImageAdapter>;
 
   createPixelValueArray(width: number, height: number): PixelValue[] {
-      return new Array<PixelValue>(width * height);
+      return new Array<PixelValue>(width * height).fill(
+        Object.fromEntries(this.imageData.imageMetadata.channels.map(channel => [channel, 0]))
+      );
   }
 
   async getImageData(): Promise<ImageData> {
@@ -75,9 +74,8 @@ export abstract class BaseImageAdapter implements IImageAdapter {
    * @returns The updated image adapter.
    */
   async setChannelValuesForPixel(x: number, y: number, pixelValue: PixelValue): Promise<BaseImageAdapter> {
-      const channels = this.imageData.imageMetadata.channels;
-      const index = (y * this.imageData.width + x) * channels;
-      this.imageData.pixelData[index] = pixelValue;
+      const index = y * this.imageData.width + x;
+      this.imageData.pixelData[index] = { ...this.imageData.pixelData[index], ...pixelValue };
       return this;
   }
 
@@ -95,15 +93,16 @@ export abstract class BaseImageAdapter implements IImageAdapter {
     ) {
       throw new Error('Pixel coordinates out of bounds');
     }
-    const channels = this.imageData.imageMetadata.channels;
-    const index = (y * this.imageData.width + x) * channels;
-
-    const pixelValue: PixelValue = {
-        r: this.imageData.pixelData[index].r,
-        g: this.imageData.pixelData[index].g,
-        b: this.imageData.pixelData[index].b,
-        a: this.imageData.pixelData[index].a ? this.imageData.pixelData[index].a : 255
-    }
+    const index = y * this.imageData.width + x;
+    const pixel = this.imageData.pixelData[index];
+    const pixelValue: PixelValue = { ...pixel };
+    
+    // Set default values if necessary
+    this.imageData.imageMetadata.channels.forEach(channel => {
+      if (!(channel in pixelValue)) {
+        pixelValue[channel] = 255;
+      }
+    });
 
     console.log(pixelValue);
 

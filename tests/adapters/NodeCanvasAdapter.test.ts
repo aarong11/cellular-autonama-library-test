@@ -33,7 +33,7 @@ describe('NodeCanvasAdapter', () => {
     imageMetadata: {
       format: 'png',
       size: 100,
-      channels: 4,
+      channels: ['r', 'g', 'b', 'a'],
     },
     width: 10,
     height: 10,
@@ -88,7 +88,6 @@ describe('NodeCanvasAdapter', () => {
     const testImageData = createTestImageData();
     let adapter: NodeCanvasAdapter = new NodeCanvasAdapter(testImageData);
     const region = await adapter.getChannelValuesForRegion(0, 2, 0, 2);
-    console.log(region);
     expect(region.length).toBe(4);
 
     for(let i = 0; i < region.length; i++) {

@@ -8,30 +8,20 @@ export class JimpAdapter extends BaseImageAdapter {
   private image: Jimp;
 
   /**
-   * Initializes the JimpAdapter with a Jimp image.
-   * @param image - The Jimp image instance.
+   * Initializes the JimpAdapter with ImageData.
+   * @param imageData - The ImageData object.
    */
-  constructor(image: Jimp) {
-    const imageData: ImageData = {
-      imageMetadata: {
-        format: image.getMIME(),
-        size: image.bitmap.data.length,
-        channels: 4,
-      },
-      width: image.bitmap.width,
-      height: image.bitmap.height,
-      pixelData: Array.from({ length: image.bitmap.width * image.bitmap.height }, (_, i) => {
-        const idx = i * 4;
-        return {
-          r: image.bitmap.data[idx],
-          g: image.bitmap.data[idx + 1],
-          b: image.bitmap.data[idx + 2],
-          a: image.bitmap.data[idx + 3],
-        };
-      }),
-    };
+  constructor(imageData: ImageData) {
     super(imageData);
-    this.image = image;
+    this.image = new Jimp(imageData.width, imageData.height);
+    const channels = imageData.imageMetadata.channels;
+    for (let i = 0; i < imageData.pixelData.length; i++) {
+      const pixel = imageData.pixelData[i];
+      const idx = i * channels.length;
+      channels.forEach((channel, index) => {
+        this.image.bitmap.data[idx + index] = pixel[channel] ?? 0;
+      });
+    }
   }
 
   /**
@@ -66,7 +56,26 @@ export class JimpAdapter extends BaseImageAdapter {
    */
   async fromFile(filePath: string): Promise<BaseImageAdapter> {
     const image = await Jimp.read(filePath);
-    return new JimpAdapter(image);
+    const channels = ['r', 'g', 'b', 'a'];
+    const pixelData: PixelValue[] = Array.from({ length: image.bitmap.width * image.bitmap.height }, (_, i) => {
+      const idx = i * channels.length;
+      const pixel: PixelValue = {};
+      channels.forEach((channel, index) => {
+        pixel[channel] = image.bitmap.data[idx + index];
+      });
+      return pixel;
+    });
+    const imageData: ImageData = {
+      imageMetadata: {
+        format: image.getMIME(),
+        size: image.bitmap.data.length,
+        channels,
+      },
+      width: image.bitmap.width,
+      height: image.bitmap.height,
+      pixelData,
+    };
+    return new JimpAdapter(imageData);
   }
 
   /**
@@ -78,10 +87,10 @@ export class JimpAdapter extends BaseImageAdapter {
    */
   async setChannelValuesForPixel(x: number, y: number, pixelValue: PixelValue): Promise<BaseImageAdapter> {
     const idx = this.image.getPixelIndex(x, y);
-    this.image.bitmap.data[idx] = pixelValue.r;
-    this.image.bitmap.data[idx + 1] = pixelValue.g;
-    this.image.bitmap.data[idx + 2] = pixelValue.b;
-    this.image.bitmap.data[idx + 3] = pixelValue.a ?? 255;
+    const channels = this.imageData.imageMetadata.channels;
+    channels.forEach((channel, index) => {
+      this.image.bitmap.data[idx + index] = pixelValue[channel] ?? 0;
+    });
     return this;
   }
 
@@ -92,13 +101,16 @@ export class JimpAdapter extends BaseImageAdapter {
    * @returns A promise that resolves to the PixelValue object.
    */
   async getChannelValues(x: number, y: number): Promise<PixelValue> {
+    if (x < 0 || x >= this.image.bitmap.width || y < 0 || y >= this.image.bitmap.height) {
+      throw new Error('Pixel coordinates out of bounds');
+    }
     const idx = this.image.getPixelIndex(x, y);
-    return {
-      r: this.image.bitmap.data[idx],
-      g: this.image.bitmap.data[idx + 1],
-      b: this.image.bitmap.data[idx + 2],
-      a: this.image.bitmap.data[idx + 3],
-    };
+    const channels = this.imageData.imageMetadata.channels;
+    const pixel: PixelValue = {};
+    channels.forEach((channel, index) => {
+      pixel[channel] = this.image.bitmap.data[idx + index] ?? 255;
+    });
+    return pixel;
   }
 
   /**

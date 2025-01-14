@@ -25,12 +25,12 @@ export class NodeCanvasAdapter extends BaseImageAdapter {
    */
   private populateCanvas(): void {
     const imageData = this.ctx.createImageData(this.imageData.width, this.imageData.height);
+    const channels = this.imageData.imageMetadata.channels;
     for (let i = 0; i < this.imageData.pixelData.length; i++) {
       const pixel = this.imageData.pixelData[i];
-      imageData.data[i * 4] = pixel.r;
-      imageData.data[i * 4 + 1] = pixel.g;
-      imageData.data[i * 4 + 2] = pixel.b;
-      imageData.data[i * 4 + 3] = pixel.a ?? 255;
+      channels.forEach((channel, index) => {
+        imageData.data[i * channels.length + index] = pixel[channel] ?? 0;
+      });
     }
     this.ctx.putImageData(imageData, 0, 0);
   }
@@ -72,19 +72,19 @@ export class NodeCanvasAdapter extends BaseImageAdapter {
     const tempCtx = tempCanvas.getContext('2d');
     tempCtx.drawImage(canvasImage, 0, 0);
     const imageData = tempCtx.getImageData(0, 0, canvasImage.width, canvasImage.height);
+    const channels = ['r', 'g', 'b', 'a'];
     const pixelData: PixelValue[] = [];
-    for (let i = 0; i < imageData.data.length; i += 4) {
-      pixelData.push({
-        r: imageData.data[i],
-        g: imageData.data[i + 1],
-        b: imageData.data[i + 2],
-        a: imageData.data[i + 3],
+    for (let i = 0; i < imageData.data.length; i += channels.length) {
+      const pixel: PixelValue = {};
+      channels.forEach((channel, index) => {
+        pixel[channel] = imageData.data[i + index];
       });
+      pixelData.push(pixel);
     }
     const metadata: ImageMetadata = {
       format: 'png',
       size: imageData.data.length,
-      channels: 4,
+      channels,
     };
     const newImageData: ImageData = {
       imageMetadata: metadata,
@@ -104,7 +104,9 @@ export class NodeCanvasAdapter extends BaseImageAdapter {
    */
   async setChannelValuesForPixel(x: number, y: number, pixelValue: PixelValue): Promise<BaseImageAdapter> {
     const ctx = this.ctx;
-    ctx.fillStyle = `rgba(${pixelValue.r}, ${pixelValue.g}, ${pixelValue.b}, ${pixelValue.a ?? 255})`;
+    const channels = this.imageData.imageMetadata.channels;
+    const rgba = channels.map(channel => pixelValue[channel] ?? 255).join(', ');
+    ctx.fillStyle = `rgba(${rgba})`;
     ctx.fillRect(x, y, 1, 1);
     this.imageData.pixelData[y * this.imageData.width + x] = pixelValue;
     return this;
