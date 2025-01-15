@@ -22,6 +22,7 @@ export interface IImageAdapter {
   getMetadata(): Promise<ImageMetadata>;
   toFile(outputPath: string): Promise<void>;
   fromFile(filePath: string): Promise<IImageAdapter>;
+  fromImageData(imageData: ImageData): Promise<BaseImageAdapter>;
 
   // Sets the RGBA values for a pixel at the given coordinates (x, y, pixelValue) and returns the updated image adapter
   setChannelValuesForPixel(x: number, y: number, pixelValue: PixelValue): Promise<BaseImageAdapter>;
@@ -129,4 +130,11 @@ export abstract class BaseImageAdapter implements IImageAdapter {
     }
     return pixelValues;
   }
+
+  /**
+   * Creates a new adapter instance from the given image data.
+   * @param imageData - The ImageData object.
+   * @returns A new instance of the adapter.
+   */
+  abstract fromImageData(imageData: ImageData): Promise<BaseImageAdapter>;
 }

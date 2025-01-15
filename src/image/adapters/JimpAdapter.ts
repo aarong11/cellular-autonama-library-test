@@ -138,6 +138,10 @@ export class JimpAdapter extends BaseImageAdapter {
     }
     return pixelValues;
   }
+
+  async fromImageData(imageData: ImageData): Promise<BaseImageAdapter> {
+    return new JimpAdapter(imageData);
+  }
 }
 
 export default JimpAdapter;

@@ -10,6 +10,10 @@ class MockImageAdapter extends BaseImageAdapter {
     return Buffer.alloc(0);
   }
 
+  async fromImageData(imageData: ImageData): Promise<BaseImageAdapter> {
+    return this;
+  }
+  
   async getMetadata(): Promise<ImageMetadata> {
     return this.imageData.imageMetadata;
   }

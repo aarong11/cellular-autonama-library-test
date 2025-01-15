@@ -160,6 +160,15 @@ export class NodeCanvasAdapter extends BaseImageAdapter {
     }
     return pixelValues;
   }
+
+  /**
+   * Creates a new NodeCanvasAdapter instance from ImageData.
+   * @param imageData - The ImageData object.
+   * @returns A promise that resolves to a new NodeCanvasAdapter instance.
+   */
+  async fromImageData(imageData: ImageData): Promise<BaseImageAdapter> {
+    return new NodeCanvasAdapter(imageData);
+  }
 }
 
 export default NodeCanvasAdapter;

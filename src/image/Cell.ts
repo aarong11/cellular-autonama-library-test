@@ -1,4 +1,4 @@
-import { BaseImageAdapter, PixelValue } from './adapters/BaseImageAdapter';
+import { BaseImageAdapter, PixelValue, ImageData } from './adapters/BaseImageAdapter';
 
 /**
  * Represents a rectangular region (cell) within an image.
@@ -100,5 +100,30 @@ export class Cell {
    */
   async getRGBValuesForCoordinates(x: number, y: number): Promise<PixelValue> {
     return await this.adapter.getChannelValues(x, y);
+  }
+
+  /**
+   * Retrieves the image data for the cell.
+   * @returns The ImageData object for the cell.
+   */
+  public async getImageData(): Promise<ImageData> {
+    const pixelData: PixelValue[] = [];
+    for (let y = this.y; y < this.y + this.height; y++) {
+      for (let x = this.x; x < this.x + this.width; x++) {
+        const pixel = await this.adapter.getChannelValues(x, y);
+        pixelData.push(pixel);
+      }
+    }
+    const imageDataToReturn: ImageData = {
+      imageMetadata: {
+        format: 'png',
+        size: 0,
+        channels: (await this.adapter.getImageData()).imageMetadata.channels
+      },
+      width: this.width,
+      height: this.height,
+      pixelData,
+    };
+    return imageDataToReturn;
   }
 }

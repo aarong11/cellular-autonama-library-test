@@ -1,5 +1,7 @@
 import { Cell } from '../image/Cell';
 import { BaseImageAdapter } from '../image/adapters/BaseImageAdapter';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Singleton class responsible for managing Cell instances.
@@ -59,10 +61,19 @@ class CellManager {
    * @param cellWidth - The width of each Cell.
    * @param cellHeight - The height of each Cell.
    */
-  public async partitionCellsFromImage(imageAdapter: BaseImageAdapter, cellWidth: number, cellHeight: number): Promise<Cell[]> {
+  public async partitionCellsFromImage(imageAdapter: BaseImageAdapter, cellWidth?: number, cellHeight?: number): Promise<Cell[]> {
     const metadata = await imageAdapter.getMetadata();
     const width = (await imageAdapter.getImageData()).width;
     const height = (await imageAdapter.getImageData()).height;
+
+    // Calculate cell dimensions based on image size
+    if (!cellWidth) {
+      cellWidth = Math.floor(width / 10);
+    }
+
+    if (!cellHeight) {
+      cellHeight = Math.floor(height / 10);
+    }
 
     if (!width || !height) return []; // Guard for empty metadata
 
@@ -83,6 +94,34 @@ class CellManager {
     }
 
     return this.cells;
+  }
+
+  /**
+   * Saves each cell's image data to a file in the "output" directory.
+   * @param outputDir - The directory where the images will be saved.
+   */
+  public async saveCellsToImages(imageAdapter: BaseImageAdapter, outputDir: string): Promise<void> {
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    const width = (await imageAdapter.getImageData()).width;
+    const cellWidth = this.cells[0].width;
+
+    // Caculate the number of cells per row
+    const cellsPerRow = Math.floor(width / cellWidth);
+
+    for (let i = 0; i < this.cells.length; i++) {
+      // When we reach the end of the row, increment y and reset x
+      const x = i % cellsPerRow + 1;
+      const y = Math.floor(i / cellsPerRow);
+
+      const cell = this.cells[i];
+      const cellImageData = await cell.getImageData();
+      const cellAdapter = await imageAdapter.fromImageData(cellImageData);
+      const outputPath = path.join(outputDir, `cell_${y}_${x}.png`);
+      await cellAdapter.toFile(outputPath);
+    }
   }
   // Additional methods for managing cells
 }
