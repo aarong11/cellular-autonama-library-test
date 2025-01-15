@@ -4,25 +4,14 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * Singleton class responsible for managing Cell instances.
- * Implements Singleton, Factory, and Repository design patterns.
+ * Class responsible for managing Cell instances.
+ * Implements Factory and Repository design patterns.
  */
 class CellManager {
-  private static instance: CellManager;
   private cells: Cell[] = [];
 
-  // Private constructor to enforce Singleton pattern
-  private constructor() {}
-
-  /**
-   * Retrieves the single instance of CellManager.
-   * @returns The CellManager instance.
-   */
-  public static getInstance(): CellManager {
-    if (!CellManager.instance) {
-      CellManager.instance = new CellManager();
-    }
-    return CellManager.instance;
+  public CellManager(cells: Cell[] = []) {
+    this.cells = cells;
   }
 
   /**
@@ -68,13 +57,12 @@ class CellManager {
 
     // Calculate cell dimensions based on image size
     if (!cellWidth) {
-      cellWidth = Math.floor(width / 10);
+      cellWidth = Math.floor(width / 5);
     }
 
     if (!cellHeight) {
-      cellHeight = Math.floor(height / 10);
+      cellHeight = Math.floor(height / 5);
     }
-
     if (!width || !height) return []; // Guard for empty metadata
 
     // Loop through the image and create cells

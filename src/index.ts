@@ -5,8 +5,6 @@ import path from 'path';
 
 async function main() {
   const filePath = path.resolve(__dirname, '../fixtures/input.png');
-
-  console.log(filePath);
   const imageAdapter = await new JimpAdapter({ 
     imageMetadata: { format: 'png', size: 0, channels: ['r', 'g', 'b', 'a'] }, 
     width: 0, 
@@ -14,12 +12,20 @@ async function main() {
     pixelData: [] 
   }).fromFile(filePath);
 
-  const cellManager = CellManager.getInstance();
+  const cellManager = new CellManager();
 
   const cells: Cell[] = await cellManager.partitionCellsFromImage(imageAdapter);
+  for(let i = 0; i < cells.length; i++) {
+    async function test() {
+      const cell = cells[i];
+      console.log(`
+            Cell ${i}: ${cell.width}x${cell.height}
+            Entropy: ${await cell.getEntropy()}
+            `);
+    }
 
-  const outputDir = path.resolve(__dirname, '../output');
-  await cellManager.saveCellsToImages(imageAdapter, outputDir);
+    test();
+  }
 }
 
 main().catch(console.error);

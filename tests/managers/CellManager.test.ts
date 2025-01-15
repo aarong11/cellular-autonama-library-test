@@ -74,14 +74,7 @@ describe('CellManager', () => {
       ],
     };
     adapter = new MockImageAdapter(imageData);
-    manager = CellManager.getInstance();
-    // Clear existing cells
-    manager.clearCells();
-  });
-
-  it('should return the same instance (Singleton)', () => {
-    const anotherManager = CellManager.getInstance();
-    expect(manager).toBe(anotherManager);
+    manager = new CellManager();
   });
 
   it('should add a cell', () => {
@@ -142,7 +135,6 @@ describe('CellManager', () => {
       const partitionedCells: Cell[] = await manager.partitionCellsFromImage(adapter, 2, 2);
       expect(partitionedCells.length).toBe(4);
     });
-
 
     it('should handle partial cells at the edges', async () => {
       // Set up imageData with a partial cell at the bottom right

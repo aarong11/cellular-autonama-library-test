@@ -54,17 +54,17 @@ export abstract class BaseImageAdapter implements IImageAdapter {
   abstract fromFile(filePath: string): Promise<IImageAdapter>;
 
   createPixelValueArray(width: number, height: number): PixelValue[] {
-      return new Array<PixelValue>(width * height).fill(
-        Object.fromEntries(this.imageData.imageMetadata.channels.map(channel => [channel, 0]))
-      );
+    return new Array<PixelValue>(width * height).fill(
+      Object.fromEntries(this.imageData.imageMetadata.channels.map(channel => [channel, 0]))
+    );
   }
 
   async getImageData(): Promise<ImageData> {
-      return this.imageData;
+    return this.imageData;
   }
 
   async setImageData(imageData: ImageData): Promise<void> {
-      this.imageData = Object.freeze(imageData);
+    this.imageData = Object.freeze(imageData);
   }
 
   /**
@@ -75,9 +75,9 @@ export abstract class BaseImageAdapter implements IImageAdapter {
    * @returns The updated image adapter.
    */
   async setChannelValuesForPixel(x: number, y: number, pixelValue: PixelValue): Promise<BaseImageAdapter> {
-      const index = y * this.imageData.width + x;
-      this.imageData.pixelData[index] = { ...this.imageData.pixelData[index], ...pixelValue };
-      return this;
+    const index = y * this.imageData.width + x;
+    this.imageData.pixelData[index] = { ...this.imageData.pixelData[index], ...pixelValue };
+    return this;
   }
 
   /**
@@ -116,10 +116,10 @@ export abstract class BaseImageAdapter implements IImageAdapter {
    * @returns A promise that resolves to an array of PixelValue objects.
    */
   async getChannelValuesForRegion(
-      xStart: number,
-      xEnd: number,
-      yStart: number,
-      yEnd: number
+    xStart: number,
+    xEnd: number,
+    yStart: number,
+    yEnd: number
   ): Promise<PixelValue[]> {
     const pixelValues: PixelValue[] = [];
     for (let y = yStart; y < yEnd; y++) {

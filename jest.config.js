@@ -12,12 +12,6 @@ module.exports = {
   },
   testTimeout: 20000,
   // Enable sourcemaps for better debugging support
-  globals: {
-      'ts-jest': {
-          tsconfig: '<rootDir>/tsconfig.json',
-          diagnostics: false, // Disable diagnostic warnings for better debugging
-      },
-  },
   // Generate coverage report only when needed
   collectCoverage: false,
   coverageDirectory: '<rootDir>/coverage',
