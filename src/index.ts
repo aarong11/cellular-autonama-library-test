@@ -2,6 +2,7 @@ import { JimpAdapter } from './image/adapters/JimpAdapter';
 import CellManager from './managers/CellManager';
 import { Cell } from './image/Cell';
 import path from 'path';
+import { Rectangle } from './image/Cell';
 
 async function main() {
   const filePath = path.resolve(__dirname, '../fixtures/input.png');
@@ -18,10 +19,18 @@ async function main() {
   for (let i = 0; i < cells.length; i++) {
     async function test() {
       const cell = cells[i];
-      console.log(`
-            Cell ${i}: ${cell.width}x${cell.height}
-            Entropy: ${await cell.getEntropy()}
-            `);
+      const rectangle: Rectangle = cell.getRectangle();
+
+      console.log(
+        `
+            Cell index ${i} (${cell.x}, ${cell.y})
+            Rectangle: [(${rectangle.xMin}, ${rectangle.yMin}), (${rectangle.xMax}, ${rectangle.yMax})]
+            Width: ${rectangle.width}
+            Height: ${rectangle.height}
+            Entropy with color: ${await cell.getEntropyWithColor()}
+            Entropy without color: ${await cell.getEntropyGreyscale()}
+        `
+      );
     }
 
     test();

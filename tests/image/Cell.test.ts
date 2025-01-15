@@ -1,5 +1,10 @@
 import { Cell } from '@src/image/Cell';
-import { BaseImageAdapter, PixelValue, ImageData, ImageMetadata } from '@src/image/adapters/BaseImageAdapter';
+import {
+  BaseImageAdapter,
+  PixelValue,
+  ImageData,
+  ImageMetadata,
+} from '@src/image/adapters/BaseImageAdapter';
 
 class MockImageAdapter extends BaseImageAdapter {
   constructor(imageData: ImageData) {
@@ -13,7 +18,7 @@ class MockImageAdapter extends BaseImageAdapter {
   async fromImageData(imageData: ImageData): Promise<BaseImageAdapter> {
     return this;
   }
-  
+
   async getMetadata(): Promise<ImageMetadata> {
     return this.imageData.imageMetadata;
   }
@@ -24,7 +29,11 @@ class MockImageAdapter extends BaseImageAdapter {
     return this;
   }
 
-  async setChannelValuesForPixel(x: number, y: number, pixelValue: PixelValue): Promise<BaseImageAdapter> {
+  async setChannelValuesForPixel(
+    x: number,
+    y: number,
+    pixelValue: PixelValue
+  ): Promise<BaseImageAdapter> {
     await super.setChannelValuesForPixel(x, y, pixelValue);
     return this;
   }
@@ -33,7 +42,12 @@ class MockImageAdapter extends BaseImageAdapter {
     return super.getChannelValues(x, y);
   }
 
-  async getChannelValuesForRegion(xStart: number, xEnd: number, yStart: number, yEnd: number): Promise<PixelValue[]> {
+  async getChannelValuesForRegion(
+    xStart: number,
+    xEnd: number,
+    yStart: number,
+    yEnd: number
+  ): Promise<PixelValue[]> {
     return super.getChannelValuesForRegion(xStart, xEnd, yStart, yEnd);
   }
 }
@@ -114,7 +128,7 @@ describe('Cell', () => {
       const mixedAdapter = new MockImageAdapter(mixedImageData);
       const cell = new Cell(0, 0, 1, 1, mixedAdapter);
       const avgColor = await cell.getAverageColor();
-      expect(avgColor).toEqual({ r: 255, g: 0, b: 0});
+      expect(avgColor).toEqual({ r: 255, g: 0, b: 0 });
     });
   });
 
@@ -133,32 +147,31 @@ describe('Cell', () => {
           { r: 255, g: 0, b: 0, a: 255 },
           { r: 255, g: 0, b: 0, a: 255 },
           { r: 255, g: 0, b: 0, a: 255 },
-        ]
-      }
+        ],
+      };
       const cell = new Cell(0, 0, 2, 2, new MockImageAdapter(imageData));
-      const entropy = await cell.getEntropy();
+      const entropy = await cell.getEntropyWithColor();
       expect(entropy).toBe(0);
     });
 
     it('should calculate correct entropy for diverse colors', async () => {
-
-        const imageData = {
-            imageMetadata: {
-              format: 'png',
-              size: 16,
-              channels: ['r', 'g', 'b', 'a'],
-            },
-            width: 2,
-            height: 2,
-            pixelData: [
-              { r: 255, g: 0, b: 0, a: 255 },
-              { r: 0, g: 255, b: 0, a: 255 },
-              { r: 255, g: 0, b: 255, a: 255 },
-              { r: 255, g: 0, b: 0, a: 255 },
-              { r: 0, g: 255, b: 0, a: 255 },
-              { r: 255, g: 0, b: 255, a: 255 },
-            ]
-          }
+      const imageData = {
+        imageMetadata: {
+          format: 'png',
+          size: 16,
+          channels: ['r', 'g', 'b', 'a'],
+        },
+        width: 2,
+        height: 2,
+        pixelData: [
+          { r: 255, g: 0, b: 0, a: 255 },
+          { r: 0, g: 255, b: 0, a: 255 },
+          { r: 255, g: 0, b: 255, a: 255 },
+          { r: 255, g: 0, b: 0, a: 255 },
+          { r: 0, g: 255, b: 0, a: 255 },
+          { r: 255, g: 0, b: 255, a: 255 },
+        ],
+      };
 
       const diverseImageData = {
         ...imageData,
@@ -171,7 +184,7 @@ describe('Cell', () => {
       };
       const diverseAdapter = new MockImageAdapter(diverseImageData);
       const cell = new Cell(0, 0, 2, 2, diverseAdapter);
-      const entropy = await cell.getEntropy();
+      const entropy = await cell.getEntropyWithColor();
       expect(entropy).toBeCloseTo(2, 1);
     });
 
@@ -182,7 +195,7 @@ describe('Cell', () => {
       };
       const emptyAdapter = new MockImageAdapter(emptyImageData);
       const cell = new Cell(0, 0, 2, 2, emptyAdapter);
-      const entropy = await cell.getEntropy();
+      const entropy = await cell.getEntropyWithColor();
       expect(entropy).toBe(0);
     });
   });
@@ -196,10 +209,18 @@ describe('Cell', () => {
 
     it('should throw error for invalid coordinates', async () => {
       const cell = new Cell(0, 0, 2, 2, new MockImageAdapter(imageData));
-      await expect(cell.getRGBValuesForCoordinates(-1, 0)).rejects.toThrow('Pixel coordinates out of bounds');
-      await expect(cell.getRGBValuesForCoordinates(0, -1)).rejects.toThrow('Pixel coordinates out of bounds');
-      await expect(cell.getRGBValuesForCoordinates(4, 0)).rejects.toThrow('Pixel coordinates out of bounds');
-      await expect(cell.getRGBValuesForCoordinates(0, 4)).rejects.toThrow('Pixel coordinates out of bounds');
+      await expect(cell.getRGBValuesForCoordinates(-1, 0)).rejects.toThrow(
+        'Pixel coordinates out of bounds'
+      );
+      await expect(cell.getRGBValuesForCoordinates(0, -1)).rejects.toThrow(
+        'Pixel coordinates out of bounds'
+      );
+      await expect(cell.getRGBValuesForCoordinates(4, 0)).rejects.toThrow(
+        'Pixel coordinates out of bounds'
+      );
+      await expect(cell.getRGBValuesForCoordinates(0, 4)).rejects.toThrow(
+        'Pixel coordinates out of bounds'
+      );
     });
   });
 
@@ -212,15 +233,13 @@ describe('Cell', () => {
       },
       width: 4,
       height: 4,
-      pixelData: [
-        { r: 255, g: 0, b: 0, a: 0 },
-      ],
+      pixelData: [{ r: 255, g: 0, b: 0, a: 0 }],
     };
     const adapter = new MockImageAdapter(transparentImageData);
     const cell = new Cell(0, 0, 2, 2, adapter);
 
     cell.hasPixels().then((result) => {
-        expect(result).toBe(true);
+      expect(result).toBe(true);
     });
   });
 });
